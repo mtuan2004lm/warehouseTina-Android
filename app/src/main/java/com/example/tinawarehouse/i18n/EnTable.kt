@@ -263,4 +263,11 @@ internal val EN_TABLE: Map<String, String> = mapOf(
     // --- Bổ sung riêng cho Android (không có trong iOS) ---
     "Nghe thử" to "Play sample",
     "Tải lại" to "Reload",
+    "Bỏ mã" to "Remove code",
+    "Các mã đang chờ sẽ bị bỏ, chưa được ghi lên công ty. Vẫn thoát?" to "The pending codes will be discarded and not recorded. Leave anyway?",
+    "Còn {0} mã chưa END CODE" to "{0} code(s) not END CODEd yet",
+    "Mã đã nằm trong kiện đang chờ" to "Code is already in the pending package",
+    "Quét hoặc gõ mã rồi Enter" to "Scan or type a code, then Enter",
+    "Thoát" to "Leave",
+    "Ở lại" to "Stay",
 )

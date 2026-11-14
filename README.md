@@ -15,7 +15,7 @@ App Android dùng camera điện thoại **thay máy quét mã vạch** để nh
 | Đa ngôn ngữ VI/EN (`tr()`), lưu token mã hóa, AuthStore/AppStore | ✅ xong |
 | Màn đăng nhập | ✅ xong (chờ build thử) |
 | Danh sách phiên + bộ lọc, tạo phiên, cài đặt (giao diện, ngôn ngữ, âm thanh) (Đợt 3) | ✅ xong (chờ build thử) |
-| Chi tiết phiên/kiện, xem ảnh (Đợt 4) | ⏳ chưa làm |
+| Chi tiết phiên (ô gõ mã theo quy tắc web: gom ≤3 mã + END CODE, danh sách kiện, kết thúc phiên), chi tiết kiện, xem ảnh (Đợt 4) | ✅ xong (chờ build thử) |
 | Màn quét, ảnh label, hư hỏng (Đợt 5-6) | ⏳ chưa làm |
 | Camera (CameraX) + mã vạch / OCR (ML Kit) | ⏳ chưa làm |
 
@@ -44,6 +44,9 @@ Hoặc trong Android Studio: chuột phải thư mục `app/src/test` → **Run 
 | `state/AuthStore.kt`, `AppStore.kt` | Đăng nhập, trạm đang dùng |
 | `ui/theme/`, `ui/login/`, `ui/TinaApp.kt` | Màu/chủ đề, màn đăng nhập, gốc app |
 | `domain/session/SessionFormat.kt`, `state/SessionsStore.kt`, `state/NewSession.kt` | Định dạng phiên, danh sách phiên + bộ lọc, tạo phiên |
+| `state/ScanFlow.kt` | **Quy tắc ghi kiện** (giống web): mã có → ghi ngay; mã không có → chờ tối đa 3; END CODE → kiện NO NAME |
+| `state/SessionDetailStore.kt`, `state/TrackingDetailStore.kt`, `domain/session/TrackingFormat.kt` | Chi tiết phiên (kiểm tra/ghi mã, phân trang, đóng phiên), chi tiết kiện |
+| `ui/common/RemotePhoto.kt`, `PhotoViewer.kt` | Tải ảnh từ link công ty, xem ảnh phóng to |
 | `sound/` | Âm thanh theo trạng thái quét (bíp Android + giọng "Block") |
 | `ui/sessions/`, `ui/settings/`, `ui/common/` | Màn danh sách phiên, tạo phiên, cài đặt, logo hãng |
 | `TinaApplication.kt`, `MainActivity.kt` | Khởi tạo đối tượng dùng chung, activity |
@@ -56,6 +59,7 @@ Mỗi kho có quy tắc quét **riêng**: thêm trạm mới = tạo `object Sta
 - Phân quyền trạm: trạm khả dụng = `me.stations`; nếu rỗng mà `systemRole == "ADMIN"` thì lấy toàn bộ `GET /stations`. Chọn trạm ở màn đăng nhập rồi **hậu kiểm** sau khi login.
 
 ## Việc còn mở
+- Ô gõ tay của **iOS** chưa theo quy tắc 3 mã + END CODE như web/Android — báo người phụ trách iOS.
 - Điền quy tắc quét kho Đức.
 - Màn hình và luồng quét; lưu hàng chờ khi mất mạng; xử lý `requiresImportCheck`; dùng `customerCodeMappings` sửa lỗi OCR mã khách.
 - Đổi API sang production + versioning.

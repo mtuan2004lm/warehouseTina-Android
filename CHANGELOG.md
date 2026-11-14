@@ -9,6 +9,28 @@
 
 ## Lịch sử thay đổi (mới nhất ở trên)
 
+### 2026-11-14 · ⭐ 🔥 📱 Ô gõ mã ở chi tiết phiên theo quy tắc web: gom tối đa 3 mã rồi END CODE
+- ⭐ **Android làm KHÁC ô gõ tay của iOS, GIỐNG web** (theo yêu cầu): iOS chỉ áp quy tắc nhiều mã + END CODE ở màn quét camera, còn ô gõ tay ghi ngay 1 mã (mã không có trong đơn phải bấm "Ghi thành kiện NO NAME"). **Người phụ trách iOS nên sửa ô gõ tay của iOS theo cho khớp.**
+- **`state/ScanFlow.kt`** ⭐🔥 (mới, dùng chung cho ô gõ tay và màn quét camera ở Đợt 5) — port `sendCompany` của `AutoScanViewModel.swift`:
+  - Mã công ty CÓ (FOUND) → ghi 1 kiện ngay; các mã đang chờ thành mã phụ.
+  - Mã công ty KHÔNG CÓ → thêm vào kiện đang chờ (1/3, 2/3, 3/3), âm "ting".
+  - Đủ 3 mã chờ mà nhập tiếp → chặn, "Bắt buộc bấm nút END CODE" (không hỏi công ty).
+  - END CODE (nút hoặc gõ `ENDCODE`) → ghi kiện NO NAME: mã đầu là mã chính, còn lại là mã phụ.
+  - Mã trùng / đã nằm trong kiện chờ / đã có trong danh sách kiện → không ghi. Phiên đã đóng → chỉ kiểm tra. Lỗi → không mất mã chờ. Mỗi lần xử lý một mã (chống Enter hai lần).
+- **`ui/sessions/SessionDetailScreen.kt`**: ô "Quét hoặc gõ mã rồi Enter" (tự xoá sau mỗi lần nhập), ô kiện đang chờ giống web (mã chính to, mã phụ nhỏ, nút × bỏ mã, chạm mã phụ để chọn làm mã chính), nút cam "n / 3 END CODE". Còn mã chờ mà thoát → hỏi "Còn n mã chưa END CODE… Vẫn thoát?" (phần thêm, iOS không có). Bỏ nút "Ghi thành kiện NO NAME" và hộp xác nhận.
+- `state/SessionDetailStore.kt` dùng `ScanFlow`; `Feedback` thêm PENDING / END_REQUIRED / NO_NAME (âm "Bắt buộc bấm END CODE", "Kiện NO NAME" theo cài đặt). `i18n/EnTable.kt` thêm 7 câu.
+- Test: `state/ScanFlowTest.kt` 10 test mới; bỏ 5 test cũ của nút NO NAME trong `Dot4Test.kt`. **75/75 pass trên JVM trong sandbox.**
+- 🔥 Còn mở: bấm "Kết thúc phiên" khi còn mã chờ thì các mã đó mất (chưa chặn/hỏi). Màn Compose chưa build thử.
+
+### 2026-11-14 · ⭐ 🔥 📱 Đợt 4: chi tiết phiên, chi tiết kiện, xem ảnh (giống iOS)
+- **`ui/sessions/SessionDetailScreen.kt` + `state/SessionDetailStore.kt`** ⭐🔥: logo hãng + bộ đếm lớn "đã quét / hãng khai"; ô gõ/dán mã (mã đã có trong danh sách → không gọi API; hỏi công ty song song các mã ứng viên của `TrackingCutter`; FOUND + phiên mở → ghi luôn như web; không có → nút "Ghi thành kiện NO NAME" có hỏi xác nhận; hiện lý do block, phát âm theo cài đặt); nút "Tiếp tục quét" (màn quét = Đợt 5, tạm là "Sắp có"); danh sách kiện tải theo trang 30, số thứ tự giảm dần giống web, nút sao chép mã (giữ lâu cũng chép), nhãn "Kiện không xác định"/"HƯ HỎNG"; "Kết thúc phiên" có hỏi xác nhận rồi quay về danh sách.
+- **`ui/sessions/TrackingDetailScreen.kt` + `state/TrackingDetailStore.kt`**: chi tiết kiện chỉ đọc (mã, mã phụ, trạng thái, khớp đơn, khách, kệ, tình trạng, check-in, ảnh label, báo cáo hư hỏng, số lượng, hàng trong kiện, giữ hàng). Nút báo/sửa hư hỏng để Đợt 6.
+- **`ui/common/PhotoViewer.kt`, `RemotePhoto.kt`**: xem ảnh toàn màn hình (vuốt đổi ảnh, chụm phóng to tối đa 6×, chạm đúp về cỡ gốc). 🔥 Tải ảnh bằng OkHttp có sẵn + bộ nhớ đệm 48 MB, **không thêm Coil** để đỡ rủi ro build. Link ảnh bắt đầu bằng "/" được ghép với máy chủ công ty.
+- `domain/session/TrackingFormat.kt`: chữ trạng thái kiện, số lượng, khớp đơn, tình trạng, quyết định.
+- `ui/TinaApp.kt`: thêm màn chi tiết phiên/kiện; màn chi tiết giữ "store" trong ngăn xếp nên quay lại không mất dữ liệu.
+- Test `state/Dot4Test.kt`: 10 test — **70/70 test pass trên JVM trong sandbox** (Đợt 1–4). Lúc viết test có một chỗ hiểu sai (cho rằng dòng kết quả ghi luôn "ĐANG BLOCK"); đã so lại iOS và sửa test cho khớp iOS.
+- 🔥 **Chưa kiểm chứng:** các màn Compose chưa build trong Android Studio.
+
 ### 2026-11-13 · ⭐ 🔥 📱 Đợt 3: danh sách phiên + tạo phiên + cài đặt (giống iOS)
 - **`ui/sessions/SessionsScreen.kt`** ⭐: danh sách phiên (mã `DHL0024`, logo hãng, cửa, người giao, xe, giờ đến, trạm, người mở; số đã quét / hãng khai xanh khi đủ, vàng khi thiếu), thanh lọc Hãng · Trạng thái · Cửa · Giờ xe đến (khoảng ngày) + Xoá lọc, kéo xuống để tải lại. Bấm phiên → màn "Sắp có" (chi tiết phiên là Đợt 4).
 - **`state/SessionsStore.kt`** 🔥: bộ lọc gọi API (ngày 00:00–23:59:59 theo giờ máy), chỉ nhận kết quả của lần tải mới nhất, chỉ hiện phiên của trạm đang chọn (phiên không rõ trạm vẫn hiện), sắp xếp id giảm dần, nhớ các cửa đã thấy, 401 → đăng xuất. `reset()` khi đăng xuất để người sau không thấy dữ liệu cũ.
