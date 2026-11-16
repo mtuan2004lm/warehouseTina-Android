@@ -28,6 +28,7 @@ import com.example.tinawarehouse.i18n.tr
 import com.example.tinawarehouse.ui.login.LoginScreen
 import com.example.tinawarehouse.state.SessionDetailStore
 import com.example.tinawarehouse.state.TrackingDetailStore
+import com.example.tinawarehouse.ui.scan.ScanScreen
 import com.example.tinawarehouse.ui.sessions.NewSessionScreen
 import com.example.tinawarehouse.ui.sessions.SessionDetailScreen
 import com.example.tinawarehouse.ui.sessions.TrackingDetailScreen
@@ -43,7 +44,7 @@ private sealed interface Screen {
     data object Settings : Screen
     class SessionDetail(val store: SessionDetailStore, val carrierName: String) : Screen
     class TrackingDetail(val store: TrackingDetailStore) : Screen
-    class Scan(val title: String) : Screen
+    class Scan(val store: SessionDetailStore, val carrierName: String) : Screen
 }
 
 /** Gốc của app: chưa đăng nhập → màn đăng nhập (luôn tối); đã đăng nhập → danh sách phiên và các màn con. */
@@ -75,10 +76,15 @@ private fun SignedInRoot(app: TinaApplication) {
         is Screen.SessionDetail -> SessionDetailScreen(
             app, s.store, s.carrierName, onBack = ::pop,
             onOpenTracking = { t -> push(Screen.TrackingDetail(TrackingDetailStore(app.api, t))) },
-            onScan = { push(Screen.Scan(s.store.ui.value.session.displayCode)) },        // màn quét: Đợt 5
+            onScan = { push(Screen.Scan(s.store, s.carrierName)) },
         )
         is Screen.TrackingDetail -> TrackingDetailScreen(app, s.store, onBack = ::pop)
-        is Screen.Scan -> ComingSoon(s.title, onBack = ::pop)
+        is Screen.Scan -> TinaWarehouseTheme(mode = "dark") {          // màn camera luôn tối
+            ScanScreen(app, s.store, s.carrierName, onBack = ::pop, onSessionClosed = {
+                // Đóng phiên xong: về thẳng danh sách phiên
+                while (stack.size > 1) stack.removeAt(stack.lastIndex)
+            })
+        }
     }
 }
 

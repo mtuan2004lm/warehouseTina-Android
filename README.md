@@ -16,8 +16,9 @@ App Android dùng camera điện thoại **thay máy quét mã vạch** để nh
 | Màn đăng nhập | ✅ xong (chờ build thử) |
 | Danh sách phiên + bộ lọc, tạo phiên, cài đặt (giao diện, ngôn ngữ, âm thanh) (Đợt 3) | ✅ xong (chờ build thử) |
 | Chi tiết phiên (ô gõ mã theo quy tắc web: gom ≤3 mã + END CODE, danh sách kiện, kết thúc phiên), chi tiết kiện, xem ảnh (Đợt 4) | ✅ xong (chờ build thử) |
-| Màn quét, ảnh label, hư hỏng (Đợt 5-6) | ⏳ chưa làm |
-| Camera (CameraX) + mã vạch / OCR (ML Kit) | ⏳ chưa làm |
+| Màn quét camera: CameraX + ML Kit, thẻ kết quả, END CODE, BLOCK, gửi lại khi mất mạng (Đợt 5) | ✅ xong (chờ build + thử máy thật) |
+| Ảnh label, báo hư hỏng (Đợt 6) | ⏳ chưa làm |
+| Camera (CameraX) + mã vạch / OCR (ML Kit) | ✅ xong (chờ thử máy thật) |
 
 ## Yêu cầu
 - Android Studio mới nhất, Kotlin 2.0.21, Jetpack Compose.
@@ -44,6 +45,8 @@ Hoặc trong Android Studio: chuột phải thư mục `app/src/test` → **Run 
 | `state/AuthStore.kt`, `AppStore.kt` | Đăng nhập, trạm đang dùng |
 | `ui/theme/`, `ui/login/`, `ui/TinaApp.kt` | Màu/chủ đề, màn đăng nhập, gốc app |
 | `domain/session/SessionFormat.kt`, `state/SessionsStore.kt`, `state/NewSession.kt` | Định dạng phiên, danh sách phiên + bộ lọc, tạo phiên |
+| `domain/scan/ScanEngine.kt`, `state/ScanController.kt` | Ghép mã vạch + mã kho của một tem từ camera; điều khiển màn quét (thẻ kết quả, lịch sử, gửi lại khi mất mạng) |
+| `camera/ScanCamera.kt`, `ui/scan/ScanScreen.kt` | CameraX + ML Kit; màn quét |
 | `state/ScanFlow.kt` | **Quy tắc ghi kiện** (giống web): mã có → ghi ngay; mã không có → chờ tối đa 3; END CODE → kiện NO NAME |
 | `state/SessionDetailStore.kt`, `state/TrackingDetailStore.kt`, `domain/session/TrackingFormat.kt` | Chi tiết phiên (kiểm tra/ghi mã, phân trang, đóng phiên), chi tiết kiện |
 | `ui/common/RemotePhoto.kt`, `PhotoViewer.kt` | Tải ảnh từ link công ty, xem ảnh phóng to |

@@ -9,6 +9,21 @@
 
 ## Lịch sử thay đổi (mới nhất ở trên)
 
+### 2026-11-16 · 🔥 📱 Sửa lỗi build Đợt 5: `when` thiếu nhánh `OFFLINE` ở `SessionDetailScreen.kt`
+- Lỗi: "'when' expression must be exhaustive. Add the 'OFFLINE' branch" trong `ResultLine`. Đợt 5 thêm `FlowResult.Kind.OFFLINE` vào `ScanFlow` nhưng quên cập nhật màn chi tiết phiên.
+- Sửa: `OFFLINE` hiện giống `ERROR` (biểu tượng cảnh báo, màu cam). Sandbox không bắt được lỗi này vì không biên dịch được file Compose.
+
+### 2026-11-16 · ⭐ 🔥 📱 Đợt 5: màn quét camera (CameraX + ML Kit) giống iOS
+- **`domain/scan/ScanEngine.kt`** ⭐🔥: port phần ghép "mã vạch + mã kho" của `AutoScanViewModel.swift`, viết đồng bộ (màn hình gọi `tick()` mỗi 50 ms) và tiêm đồng hồ để test. Cửa sổ đọc 2,5 giây; đủ cả hai thì chờ thêm ≤ 0,5 giây để gom các mã khác cùng tem (≤ 4); mã kho đọc trước mã vạch vẫn ghép được (trong 3 giây); hết giờ mà thiếu mã kho: tem tiếp theo của kiện đang chờ dùng mã kho cũ, tem mới lần 1 báo THIẾU MÃ KHO / lần 2 (trong 60 giây) gửi không kèm mã kho; mã đã gửi còn trong khung thì chỉ nhắc, rời khung > 0,7 giây rồi đưa lại → hỏi công ty → MÃ TRÙNG (không lặp trong 4 giây); `*ENDCODE*` chống đọc lặp 3 giây; kiện BLOCK → bỏ qua mọi đầu vào tới khi bấm "Quét tiếp tục".
+- **`state/ScanController.kt`** ⭐: nối ScanEngine với **`ScanFlow`** (cùng quy tắc 3 mã + END CODE với ô gõ tay — **danh sách mã chờ dùng chung** giữa ô gõ tay và màn quét), thẻ kết quả, lịch sử, âm thanh; **mất mạng → giữ lại, tự gửi lại mỗi 4 giây** (`ScanFlow` thêm loại kết quả `OFFLINE`: lỗi chưa có phản hồi HTTP).
+- **`camera/ScanCamera.kt`** 🔥: CameraX (preview + phân tích 1080p, giữ khung mới nhất) + ML Kit Barcode (12 loại mã) + ML Kit Text Recognition (latin); đèn flash; tự lấy nét/đo sáng lại ở giữa khung khi thấy chữ mà > 1,5 giây không đọc được mã vạch (port `refocusIfStuck`).
+- **`ui/scan/ScanScreen.kt`**: luôn tối; ô ĐÃ GỬI, thẻ kết quả (SUCCESS + dải vàng HÀNG KINH DOANH / TING n/3 / THIẾU MÃ KHO / NO NAME / BẤM END CODE / MÃ TRÙNG / BLOCK / BỎ QUA), khung quét nét đứt với vòng cam theo tiến độ, dải "mất kết nối, đang tự gửi lại", nút END CODE + "Chọn mã chính", cảnh báo đỏ "BẮT BUỘC BẤM END CODE", màn che BLOCK / ĐÃ DỪNG QUÉT, menu Dừng quét / Kết thúc phiên, đèn, lịch sử quét, xin quyền camera, giữ màn hình sáng. **Chưa có nút Ảnh label / Hỏng (Đợt 6).**
+- `ui/TinaApp.kt`: "Tiếp tục quét" mở màn quét; kết thúc phiên từ màn quét → về thẳng danh sách phiên. `ui/sessions/SessionDetailScreen.kt` đọc mã chờ trực tiếp từ `ScanFlow`. `i18n/EnTable.kt` +3 câu.
+- Gradle: CameraX 1.4.2, ML Kit barcode-scanning 17.3.0, text-recognition 16.0.1. Manifest: quyền CAMERA (camera không bắt buộc). Giữ nguyên AGP 9.5.1 / Kotlin 2.2.10 / Gradle 9.6 đã có trên máy.
+- Khác iOS: âm "mã trùng" và "bắt buộc END CODE" bên iOS có vẻ bị đặt ngược nhau; Android dùng đúng tên âm trong Cài đặt. OCR dùng ML Kit thay Vision — cần thử trên điện thoại thật.
+- Test `scan/ScanEngineTest.kt`: 7 test ScanEngine + 5 test ScanController — **87/87 pass trên JVM trong sandbox** (lúc viết, 1 test kỳ vọng sai âm NO NAME cho mã kho `FD VAT HUE`; mã này là hàng kinh doanh nên đúng là âm "Hàng kinh doanh" như iOS → sửa test).
+- 🔥 **Chưa kiểm chứng:** camera, ML Kit, giao diện chưa build/chạy; cần Sync Gradle và thử trên máy Android thật.
+
 ### 2026-11-14 · ⭐ 🔥 📱 Ô gõ mã ở chi tiết phiên theo quy tắc web: gom tối đa 3 mã rồi END CODE
 - ⭐ **Android làm KHÁC ô gõ tay của iOS, GIỐNG web** (theo yêu cầu): iOS chỉ áp quy tắc nhiều mã + END CODE ở màn quét camera, còn ô gõ tay ghi ngay 1 mã (mã không có trong đơn phải bấm "Ghi thành kiện NO NAME"). **Người phụ trách iOS nên sửa ô gõ tay của iOS theo cho khớp.**
 - **`state/ScanFlow.kt`** ⭐🔥 (mới, dùng chung cho ô gõ tay và màn quét camera ở Đợt 5) — port `sendCompany` của `AutoScanViewModel.swift`:

@@ -118,6 +118,7 @@ fun SessionDetailScreen(
     onBack: () -> Unit, onOpenTracking: (CompanyTracking) -> Unit, onScan: () -> Unit,
 ) {
     val ui by store.ui.collectAsState()
+    val pending by store.flow.pending.collectAsState()     // dùng chung với màn quét camera
     val scope = rememberCoroutineScope()
     val haptic = LocalHapticFeedback.current
     val clipboard = LocalClipboardManager.current
@@ -137,8 +138,8 @@ fun SessionDetailScreen(
     }
     fun submit() = scope.launch { store.submit() }
     // Còn mã chờ END CODE thì hỏi trước khi thoát (mã chờ chỉ nằm trong bộ nhớ)
-    fun back() { if (ui.pending.isNotEmpty()) confirmLeave = true else onBack() }
-    BackHandler(enabled = ui.pending.isNotEmpty()) { confirmLeave = true }
+    fun back() { if (pending.isNotEmpty()) confirmLeave = true else onBack() }
+    BackHandler(enabled = pending.isNotEmpty()) { confirmLeave = true }
 
     val s = ui.session
     val countColor = when (SessionFormat.countLevel(s)) { CountLevel.DONE -> OkGreen; CountLevel.MISSING -> Yellow; CountLevel.NEUTRAL -> MaterialTheme.colorScheme.onSurface }
@@ -177,8 +178,8 @@ fun SessionDetailScreen(
                     }
                 }
 
-                if (ui.isOpen && ui.pending.isNotEmpty()) item {
-                    PendingCard(ui.pending, busy = ui.busy, onRemove = store::removePending, onMain = store::makeMain,
+                if (ui.isOpen && pending.isNotEmpty()) item {
+                    PendingCard(pending, busy = ui.busy, onRemove = store::removePending, onMain = store::makeMain,
                         onEndCode = { scope.launch { store.endCode() } })
                 }
 
@@ -214,7 +215,7 @@ fun SessionDetailScreen(
 
     if (confirmLeave) AlertDialog(
         onDismissRequest = { confirmLeave = false },
-        title = { Text(tr("Còn {0} mã chưa END CODE", ui.pending.size)) },
+        title = { Text(tr("Còn {0} mã chưa END CODE", pending.size)) },
         text = { Text(tr("Các mã đang chờ sẽ bị bỏ, chưa được ghi lên công ty. Vẫn thoát?")) },
         dismissButton = { TextButton(onClick = { confirmLeave = false }) { Text(tr("Ở lại")) } },
         confirmButton = { TextButton(onClick = { confirmLeave = false; onBack() }) { Text(tr("Thoát"), color = MaterialTheme.colorScheme.error) } },
@@ -265,7 +266,7 @@ private fun ResultLine(r: FlowResult) {
             (if (r.blocks.isEmpty()) Icons.Default.Verified else Icons.Default.Lock) to (if (r.blocks.isEmpty()) OkGreen else DupRed)
         FlowResult.Kind.PENDING, FlowResult.Kind.NOT_FOUND_ONLY -> Icons.AutoMirrored.Filled.HelpOutline to Accent
         FlowResult.Kind.END_REQUIRED, FlowResult.Kind.DUPLICATE, FlowResult.Kind.ALREADY_PENDING -> Icons.Default.Warning to DupRed
-        FlowResult.Kind.NOTHING_PENDING, FlowResult.Kind.ERROR -> Icons.Default.Warning to Accent
+        FlowResult.Kind.NOTHING_PENDING, FlowResult.Kind.ERROR, FlowResult.Kind.OFFLINE -> Icons.Default.Warning to Accent
     }
     if (r.code.isNotEmpty()) Text(r.code, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, fontSize = 15.sp)
     if (r.message.isNotEmpty()) StatusLine(icon, r.message, color)

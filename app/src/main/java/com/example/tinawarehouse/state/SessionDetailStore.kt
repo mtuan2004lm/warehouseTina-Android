@@ -94,7 +94,7 @@ class SessionDetailStore(
         val r = flow.submit(u0.code, listedLocally = { set ->
             items.any { t -> TrackingCutter.normalize(t.trackingNumber) in set || t.additionalTrackingNumbers.any { TrackingCutter.normalize(it) in set } }
         }, write = u0.isOpen)
-        finish(r, clearInput = r.kind != FlowResult.Kind.ERROR)
+        finish(r, clearInput = r.kind != FlowResult.Kind.ERROR && r.kind != FlowResult.Kind.OFFLINE)
     }
 
     /** Nút END CODE: ghi kiện NO NAME từ các mã đang chờ. */
@@ -115,7 +115,7 @@ class SessionDetailStore(
             FlowResult.Kind.PENDING, FlowResult.Kind.NOT_FOUND_ONLY -> feedback(Feedback.PENDING)
             FlowResult.Kind.END_REQUIRED -> feedback(Feedback.END_REQUIRED)
             FlowResult.Kind.DUPLICATE, FlowResult.Kind.ALREADY_PENDING -> feedback(Feedback.DUPLICATE)
-            FlowResult.Kind.ERROR -> feedback(Feedback.ERROR)
+            FlowResult.Kind.ERROR, FlowResult.Kind.OFFLINE -> feedback(Feedback.ERROR)
             FlowResult.Kind.FOUND_ONLY, FlowResult.Kind.NOTHING_PENDING -> Unit
         }
         if (r.kind == FlowResult.Kind.WRITTEN || r.kind == FlowResult.Kind.NO_NAME) refreshAll()

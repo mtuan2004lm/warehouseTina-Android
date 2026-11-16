@@ -270,4 +270,7 @@ internal val EN_TABLE: Map<String, String> = mapOf(
     "Quét hoặc gõ mã rồi Enter" to "Scan or type a code, then Enter",
     "Thoát" to "Leave",
     "Ở lại" to "Stay",
+    "Chưa quét nhãn nào." to "No labels scanned yet.",
+    "Cần quyền camera để quét" to "Camera permission is needed to scan",
+    "Đèn" to "Torch",
 )

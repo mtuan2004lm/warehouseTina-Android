@@ -26,6 +26,8 @@ data class FlowResult(
     val matchStatus: String = "",
     val trackingId: String = "",
     val seq: Int = 0,                 // PENDING: mã thứ mấy trong kiện đang chờ (1..3)
+    val warehouse: String = "",       // mã kho đã gửi kèm kiện
+    val extraCount: Int = 0,          // số mã phụ đã gửi kèm kiện
 ) {
     enum class Kind {
         WRITTEN,           // công ty có mã → đã ghi 1 kiện (mã đang chờ thành mã phụ)
@@ -37,7 +39,8 @@ data class FlowResult(
         NOTHING_PENDING,   // bấm END CODE khi chưa có mã chờ
         FOUND_ONLY,        // phiên đã đóng: chỉ kiểm tra, công ty có mã
         NOT_FOUND_ONLY,    // phiên đã đóng: chỉ kiểm tra, công ty không có
-        ERROR,
+        ERROR,             // công ty từ chối (lỗi HTTP)
+        OFFLINE,           // mất mạng / không gọi được: màn quét tự gửi lại
     }
 }
 
@@ -127,7 +130,8 @@ class ScanFlow(
                 clear()
                 if (r.checkIn == "DUPLICATE") return FlowResult(FlowResult.Kind.DUPLICATE, value, tr("Mã đã quét trong phiên"))
                 val note = r.matchStatus + (if (additional.isNotEmpty()) tr(" · +{0} mã phụ", additional.size) else "")
-                return FlowResult(FlowResult.Kind.WRITTEN, value, note, (checkBlocks + r.blocks).toSortedSet().toList(), r.matchStatus, r.id)
+                return FlowResult(FlowResult.Kind.WRITTEN, value, note, (checkBlocks + r.blocks).toSortedSet().toList(), r.matchStatus, r.id,
+                    warehouse = customer, extraCount = additional.size)
             }
             // Không có thông tin → thêm vào kiện đang chờ ("ting")
             _pending.value = _pending.value + cut.primary
@@ -141,7 +145,7 @@ class ScanFlow(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            return FlowResult(FlowResult.Kind.ERROR, code, e.userMessage())
+            return FlowResult(errorKind(e), code, e.userMessage())
         }
     }
 
@@ -154,11 +158,15 @@ class ScanFlow(
             clear()
             if (r.checkIn == "DUPLICATE") FlowResult(FlowResult.Kind.DUPLICATE, list.first(), tr("Mã đã quét trong phiên"))
             else FlowResult(FlowResult.Kind.NO_NAME, list.first(), "NO NAME · ${r.checkIn}" +
-                (if (list.size > 1) tr(" · +{0} mã phụ", list.size - 1) else ""), r.blocks, r.matchStatus, r.id)
+                (if (list.size > 1) tr(" · +{0} mã phụ", list.size - 1) else ""), r.blocks, r.matchStatus, r.id,
+                warehouse = wh, extraCount = list.size - 1)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            FlowResult(FlowResult.Kind.ERROR, list.first(), (e as? CompanyError)?.description ?: e.userMessage())
+            FlowResult(errorKind(e), list.first(), e.userMessage())
         }
     }
+
+    /** Lỗi mạng (chưa có phản hồi HTTP) → OFFLINE (gửi lại an toàn); có phản hồi HTTP → ERROR. */
+    private fun errorKind(e: Exception) = if (e is CompanyError && e.status > 0) FlowResult.Kind.ERROR else FlowResult.Kind.OFFLINE
 }
