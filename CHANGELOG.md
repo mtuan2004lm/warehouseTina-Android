@@ -9,6 +9,11 @@
 
 ## Lịch sử thay đổi (mới nhất ở trên)
 
+### 2026-11-16 · 📱 Đổi tên app thành "Warehouse Tina" + logo TN giống iOS
+- `res/values/strings.xml`: `app_name` "Tina Warehouse" → **"Warehouse Tina"** (đúng `CFBundleDisplayName` của iOS). Tên gói `com.example.tinawarehouse` giữ nguyên.
+- Biểu tượng app: lấy `AppIcon.png` của iOS (logo TN, nền trắng), thu còn 82% cho vừa vùng an toàn của adaptive icon → `mipmap-*/ic_launcher_foreground.png` (5 cỡ), `values/ic_launcher_bg.xml` (nền trắng), `mipmap-anydpi/ic_launcher.xml` + `ic_launcher_round.xml` trỏ sang logo mới (bỏ lớp monochrome).
+- Các file biểu tượng robot cũ của template (`drawable/ic_launcher_*.xml`, `mipmap-*/ic_launcher*.webp`) còn trong project nhưng không được dùng; có thể xoá tay.
+
 ### 2026-11-16 · ⭐ 🔥 📱 Đợt 6: ảnh label + báo hư hỏng (giống iOS)
 - **`state/DamageStore.kt`** ⭐: form báo hư hỏng (port `CompanyDamageSheet`): loại hư hỏng xếp theo tên, chọn nhiều; tối đa 10 ảnh; quyết định Nhận hàng / Từ chối. Báo mới = POST; sửa = PATCH (chỉ gửi quyết định khi đổi, không có ảnh mới thì giữ ảnh cũ, có ảnh mới thì THAY TOÀN BỘ ảnh cũ). Khoá quyết định khi báo cáo cũ đã Từ chối hoặc kiện ON_HOLD / RETURNED_TO_SELLER. Lỗi thì giữ nguyên form. Kèm `uploadLabelPhoto()` (gửi ảnh label, trả câu thông báo).
 - **`ui/damage/DamageDialog.kt`**: bảng báo hư hỏng toàn màn hình, hỏi xác nhận trước khi gửi (GHI thật lên công ty).

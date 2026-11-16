@@ -1,4 +1,4 @@
-# Tina Warehouse (Android)
+# Warehouse Tina (Android)
 
 App Android dùng camera điện thoại **thay máy quét mã vạch** để nhận hàng kho, làm việc với API công ty `https://apiwh-dev.tinashipping.com/api`. Đây là bản port từ app iOS `WarehouseScanner` (SwiftUI) đang chạy thật ở kho Mỹ.
 
