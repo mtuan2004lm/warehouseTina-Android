@@ -9,6 +9,16 @@
 
 ## Lịch sử thay đổi (mới nhất ở trên)
 
+### 2026-11-16 · ⭐ 🔥 📱 Đợt 6: ảnh label + báo hư hỏng (giống iOS)
+- **`state/DamageStore.kt`** ⭐: form báo hư hỏng (port `CompanyDamageSheet`): loại hư hỏng xếp theo tên, chọn nhiều; tối đa 10 ảnh; quyết định Nhận hàng / Từ chối. Báo mới = POST; sửa = PATCH (chỉ gửi quyết định khi đổi, không có ảnh mới thì giữ ảnh cũ, có ảnh mới thì THAY TOÀN BỘ ảnh cũ). Khoá quyết định khi báo cáo cũ đã Từ chối hoặc kiện ON_HOLD / RETURNED_TO_SELLER. Lỗi thì giữ nguyên form. Kèm `uploadLabelPhoto()` (gửi ảnh label, trả câu thông báo).
+- **`ui/damage/DamageDialog.kt`**: bảng báo hư hỏng toàn màn hình, hỏi xác nhận trước khi gửi (GHI thật lên công ty).
+- **`ui/common/PhotoTaker.kt`** 🔥: chụp ảnh bằng **app camera của máy** (`TakePicture` + `FileProvider`), tự xin quyền camera, xoay theo EXIF, thu nhỏ cạnh dài ≤ 1600 px, JPEG 70% (giống iOS). Khác iOS: giao diện lúc chụp tuỳ hãng máy.
+- `ui/scan/ScanScreen.kt`: thêm nút **"Ảnh label"** và **"Hỏng"** cho kiện vừa ghi (mở bảng hư hỏng thì nhả camera quét). `state/ScanController.kt`: `showBanner()`.
+- `ui/sessions/TrackingDetailScreen.kt`: nút "Báo hư hỏng" / "Sửa báo cáo / đổi ảnh"; đóng bảng thì tải lại kiện.
+- `AndroidManifest.xml` + `res/xml/file_paths.xml`: khai báo `FileProvider` (thư mục cache `photos/` cho ảnh tạm, chụp xong xoá). `i18n/EnTable.kt` +1 câu. Không thêm thư viện.
+- Test `state/Dot6Test.kt`: 6 test — **93/93 pass trên JVM trong sandbox**.
+- 🔥 **Chưa kiểm chứng:** chụp ảnh và giao diện chưa build/chạy trên máy. Còn mở: "Kết thúc phiên" khi còn mã chờ END CODE chưa chặn/hỏi.
+
 ### 2026-11-16 · 🔥 📱 Sửa lỗi build Đợt 5: `when` thiếu nhánh `OFFLINE` ở `SessionDetailScreen.kt`
 - Lỗi: "'when' expression must be exhaustive. Add the 'OFFLINE' branch" trong `ResultLine`. Đợt 5 thêm `FlowResult.Kind.OFFLINE` vào `ScanFlow` nhưng quên cập nhật màn chi tiết phiên.
 - Sửa: `OFFLINE` hiện giống `ERROR` (biểu tượng cảnh báo, màu cam). Sandbox không bắt được lỗi này vì không biên dịch được file Compose.

@@ -109,6 +109,9 @@ class ScanController(
     /** Chọn một mã đang chờ làm mã chính rồi chốt kiện NO NAME. */
     fun chooseMain(code: String) { flow.makeMain(code); endCodeAt = 0; endCode() }
 
+    /** Hiện một dải thông báo 3 giây (vd. kết quả gửi ảnh label). */
+    fun showBanner(text: String) { bannerUntil = clock() + 3000; _ui.update { it.copy(banner = text) } }
+
     /** Bấm "Quét tiếp tục" sau kiện BLOCK. */
     fun continueAfterBlock() { engine.continueAfterBlock(); _ui.update { it.copy(blockCard = null) } }
 

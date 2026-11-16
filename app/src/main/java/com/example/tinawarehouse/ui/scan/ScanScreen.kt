@@ -34,6 +34,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.DocumentScanner
 import androidx.compose.material.icons.filled.FlashlightOff
 import androidx.compose.material.icons.filled.FlashlightOn
 import androidx.compose.material.icons.filled.Lock
@@ -95,7 +97,11 @@ import com.example.tinawarehouse.camera.ScanCamera
 import com.example.tinawarehouse.domain.station.RuleMatcher
 import com.example.tinawarehouse.i18n.tr
 import com.example.tinawarehouse.sound.ScanSound
+import com.example.tinawarehouse.state.DamageStore
 import com.example.tinawarehouse.state.ScanCard
+import com.example.tinawarehouse.state.uploadLabelPhoto
+import com.example.tinawarehouse.ui.common.rememberPhotoTaker
+import com.example.tinawarehouse.ui.damage.DamageDialog
 import com.example.tinawarehouse.state.ScanController
 import com.example.tinawarehouse.state.ScanEntry
 import com.example.tinawarehouse.state.ScanFlow
@@ -115,7 +121,7 @@ private val Yellow = Color(0xFFFACC15)
 /**
  * Màn quét camera: đưa tem vào khung một lần, app tự lấy mã vạch + mã kho rồi ghi lên công ty.
  * Port từ AutoScanView.swift. Luôn tối. Dùng chung danh sách mã chờ END CODE với ô gõ tay của chi tiết phiên.
- * Ảnh label / báo hư hỏng: Đợt 6.
+ * Nút "Ảnh label" / "Hỏng" áp dụng cho kiện vừa ghi gần nhất.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -158,6 +164,12 @@ fun ScanScreen(app: TinaApplication, detail: SessionDetailStore, carrierName: St
     var confirmClose by remember { mutableStateOf(false) }
     var showPick by remember { mutableStateOf(false) }
     var showHistory by remember { mutableStateOf(false) }
+    var damage by remember { mutableStateOf<DamageStore?>(null) }                 // bảng báo hư hỏng của kiện vừa ghi
+    var photoTarget by remember { mutableStateOf<Pair<String, String>?>(null) }   // (id kiện, mã) sẽ nhận ảnh label
+    // Chụp ảnh label bằng camera của máy rồi gửi lên công ty; kết quả hiện ở dải thông báo
+    val takeLabelPhoto = rememberPhotoTaker { jpeg ->
+        photoTarget?.let { (id, code) -> scope.launch { controller.showBanner(uploadLabelPhoto(app.api, id, code, jpeg)) } }
+    }
 
     LaunchedEffect(Unit) { if (!granted) askPermission.launch(Manifest.permission.CAMERA) }
     // Camera chạy khi được phép, không dừng và không mở bảng chọn
@@ -232,9 +244,16 @@ fun ScanScreen(app: TinaApplication, detail: SessionDetailStore, carrierName: St
                     }
                 }
             }
-            // Nút chức năng: đèn · lịch sử (ảnh label / hư hỏng: Đợt 6)
-            Row(Modifier.fillMaxWidth().padding(bottom = 16.dp), horizontalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterHorizontally)) {
+            // Nút chức năng: đèn · ảnh label · hỏng · lịch sử
+            Row(Modifier.fillMaxWidth().padding(bottom = 16.dp), horizontalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
                 RoundButton(if (torch) Icons.Default.FlashlightOn else Icons.Default.FlashlightOff, tr("Đèn"), size = 48) { torch = !torch }
+                val item = ui.lastItemId?.let { id -> id to (ui.lastItemCode ?: "") }
+                CapsuleButton(tr("Ảnh label"), Icons.Default.DocumentScanner, if (item == null) Color.Gray.copy(alpha = 0.6f) else Navy.copy(alpha = 0.9f), enabled = item != null) {
+                    photoTarget = item; takeLabelPhoto()
+                }
+                CapsuleButton(tr("Hỏng"), Icons.Default.CameraAlt, if (item == null) Color.Gray.copy(alpha = 0.6f) else DupRed, enabled = item != null) {
+                    item?.let { (id, code) -> damage = DamageStore(app.api, id, code); sheetOpen = true }     // nhả camera khi mở bảng
+                }
                 RoundButton(Icons.AutoMirrored.Filled.List, tr("Lịch sử quét"), size = 48) { showHistory = true }
             }
         }
@@ -316,6 +335,7 @@ fun ScanScreen(app: TinaApplication, detail: SessionDetailStore, carrierName: St
     if (showPick) PickMainSheet(pending,
         onPick = { c -> controller.chooseMain(c); showPick = false; sheetOpen = false },
         onDismiss = { showPick = false; sheetOpen = false })
+    damage?.let { d -> DamageDialog(d, onClose = { damage = null; sheetOpen = false }) }
     if (showHistory) ModalBottomSheet(onDismissRequest = { showHistory = false }) { History(ui.entries) }
 }
 
@@ -418,6 +438,14 @@ private fun Pill(t: String, bg: Color, icon: androidx.compose.ui.graphics.vector
 private fun RoundButton(icon: androidx.compose.ui.graphics.vector.ImageVector, desc: String, size: Int = 46, onClick: () -> Unit) {
     IconButton(onClick = onClick, modifier = Modifier.size(size.dp).clip(CircleShape).background(Navy.copy(alpha = 0.9f))) {
         Icon(icon, desc, tint = Color.White)
+    }
+}
+
+@Composable
+private fun CapsuleButton(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, bg: Color, enabled: Boolean, onClick: () -> Unit) {
+    Row(Modifier.height(48.dp).clip(CircleShape).background(bg).clickable(enabled = enabled, onClick = onClick).padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, null, tint = Color.White, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(6.dp))
+        Text(label, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1)
     }
 }
 

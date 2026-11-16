@@ -273,4 +273,5 @@ internal val EN_TABLE: Map<String, String> = mapOf(
     "Chưa quét nhãn nào." to "No labels scanned yet.",
     "Cần quyền camera để quét" to "Camera permission is needed to scan",
     "Đèn" to "Torch",
+    "Bỏ ảnh" to "Remove photo",
 )

@@ -19,6 +19,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -51,7 +54,9 @@ import com.example.tinawarehouse.data.CompanyApi
 import com.example.tinawarehouse.domain.session.SessionFormat
 import com.example.tinawarehouse.domain.session.TrackingFormat
 import com.example.tinawarehouse.i18n.tr
+import com.example.tinawarehouse.state.DamageStore
 import com.example.tinawarehouse.state.TrackingDetailStore
+import com.example.tinawarehouse.ui.damage.DamageDialog
 import com.example.tinawarehouse.ui.common.PhotoViewer
 import com.example.tinawarehouse.ui.common.RemotePhoto
 import com.example.tinawarehouse.ui.theme.Accent
@@ -64,6 +69,13 @@ fun TrackingDetailScreen(app: TinaApplication, store: TrackingDetailStore, onBac
     val ui by store.ui.collectAsState()
     val scope = rememberCoroutineScope()
     var viewer by remember { mutableStateOf<Pair<List<String>, Int>?>(null) }
+    var damageForm by remember { mutableStateOf<DamageStore?>(null) }
+    // Mở bảng báo hư hỏng (báo mới, hoặc sửa báo cáo đã có). Kiện đang giữ / đã trả người bán thì khoá quyết định.
+    fun openDamage() {
+        val t0 = ui.tracking
+        damageForm = DamageStore(app.api, t0.id, t0.trackingNumber, existing = ui.damage,
+            lockDecision = t0.status == "ON_HOLD" || t0.status == "RETURNED_TO_SELLER")
+    }
     app.ui.lang
     LaunchedEffect(Unit) { store.refresh() }
     val t = ui.tracking
@@ -107,12 +119,18 @@ fun TrackingDetailScreen(app: TinaApplication, store: TrackingDetailStore, onBac
                                 val urls = d.photoUrls.map(::absoluteUrl)
                                 if (urls.isEmpty()) Caption(tr("Công ty chưa có ảnh hư hỏng cho kiện này."))
                                 else Thumbs(urls) { i -> viewer = urls to i }
-                                // Nút "Sửa báo cáo / đổi ảnh" sẽ có ở Đợt 6
+                                if (ui.canEditDamage) ActionButton(tr("Sửa báo cáo / đổi ảnh"), Icons.Default.Edit, ::openDamage)
                             }
-                            ui.damageNote != null -> Caption(tr("Chưa lấy được báo cáo hư hỏng: {0}", ui.damageNote!!))
+                            ui.damageNote != null -> {
+                                Caption(tr("Chưa lấy được báo cáo hư hỏng: {0}", ui.damageNote!!))
+                                if (ui.canReportDamage) ActionButton(tr("Báo hư hỏng"), Icons.Default.Warning, ::openDamage)
+                            }
                             else -> Box(Modifier.fillMaxWidth(), Alignment.Center) { CircularProgressIndicator(Modifier.size(28.dp)) }
                         }
                     }
+                }
+                if (!ui.isDamaged && ui.canReportDamage) item {
+                    Section(tr("Hư hỏng")) { ActionButton(tr("Báo hư hỏng"), Icons.Default.Warning, ::openDamage) }
                 }
                 item {
                     Section(tr("Số lượng")) {
@@ -149,6 +167,7 @@ fun TrackingDetailScreen(app: TinaApplication, store: TrackingDetailStore, onBac
         }
     }
     viewer?.let { (urls, start) -> PhotoViewer(urls, start, onClose = { viewer = null }) }
+    damageForm?.let { d -> DamageDialog(d, onClose = { damageForm = null; scope.launch { store.refresh() } }) }
 }
 
 /** Link ảnh bắt đầu bằng "/" thì ghép với địa chỉ máy chủ công ty. */
@@ -184,6 +203,11 @@ private fun Stacked(k: String, v: String) = Column(verticalArrangement = Arrange
 private fun CodeLines(k: String, codes: List<String>) = Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
     Text(k, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
     SelectionContainer { Column { codes.forEach { Text(it, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold, fontSize = 16.sp) } } }
+}
+
+@Composable
+private fun ActionButton(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
+    TextButton(onClick = onClick) { Icon(icon, null, tint = Accent, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text(label, color = Accent, fontWeight = FontWeight.SemiBold) }
 }
 
 @Composable private fun Caption(text: String) = Text(text, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
